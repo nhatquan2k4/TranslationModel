@@ -1,0 +1,18 @@
+torch
+torchvision
+torchaudio
+transformers
+datasets
+albumentations
+tokenizers
+nltk
+scikit-learn
+tqdm
+Pillow
+# For synthetic data generation
+TextRecognitionDataGenerator
+# For evaluation
+jiwer
+sacrebleu
+# For spell correction (optional, if using a library)
+pyspellchecker
