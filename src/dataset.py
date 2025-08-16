@@ -1,10 +1,9 @@
 # src/dataset.py
 import os
 import random
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from torch.utils.data import Dataset, DataLoader, random_split
 from transformers import TrOCRProcessor
-from TextRecognitionDataGenerator.from_strings import GeneratorFromStrings
 import string
 
 from src.config import (
@@ -40,34 +39,32 @@ class ImageTextDataset(Dataset):
 
     def _generate_synthetic_data(self):
         """
-        Generates synthetic data using TextRecognitionDataGenerator.
-        This is a placeholder for a more sophisticated data generation pipeline.
+        Generates synthetic data using Pillow (không cần TextRecognitionDataGenerator).
+        Tạo ảnh trắng, vẽ text tiếng Anh lên ảnh.
         """
         os.makedirs(self.data_path, exist_ok=True)
-        
-        # Create a dummy fonts directory if it doesn't exist
         os.makedirs(SYNTHETIC_FONTS_DIR, exist_ok=True)
-        
-        # Simple English phrases for demonstration
+
         english_texts = [
             "".join(random.choices(string.ascii_letters + string.digits, k=random.randint(5, 20)))
             for _ in range(SYNTHETIC_DATA_COUNT)
         ]
-        # Placeholder for Vietnamese translations
         vietnamese_texts = ["vi du " + text for text in english_texts]
 
-        generator = GeneratorFromStrings(
-            strings=english_texts,
-            count=SYNTHETIC_DATA_COUNT,
-            fonts=[f.path for f in os.scandir(SYNTHETIC_FONTS_DIR) if f.name.endswith(('.ttf', '.otf'))] if os.listdir(SYNTHETIC_FONTS_DIR) else [],
-            language="en",
-            size=32,
-            distorsion_type=random.randint(0, 3),
-            random_blur=True,
-            random_skew=True,
-        )
+        # Chọn font mặc định hoặc font .ttf trong thư mục SYNTHETIC_FONTS_DIR
+        font_path = None
+        font_files = [f.path for f in os.scandir(SYNTHETIC_FONTS_DIR) if f.name.endswith(('.ttf', '.otf'))]
+        if font_files:
+            font_path = font_files[0]
 
-        for i, (img, lbl) in enumerate(generator):
+        for i, text in enumerate(english_texts):
+            img = Image.new("RGB", (200, 50), color="white")
+            draw = ImageDraw.Draw(img)
+            try:
+                font = ImageFont.truetype(font_path, 32) if font_path else ImageFont.load_default()
+            except Exception:
+                font = ImageFont.load_default()
+            draw.text((10, 10), text, font=font, fill="black")
             img_path = os.path.join(self.data_path, f"synth_{i}.png")
             img.save(img_path)
             self.image_paths.append(img_path)
